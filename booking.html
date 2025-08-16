@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ride Booking – Uber / Careem</title>
+  <style>
+    :root {
+      --device-w: 800px;
+      --device-h: 950px;
+      --chrome:   10px;
+      --glass: rgba(255,255,255,.12);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin:0; display:grid; place-items:center; background:#f0f0f0; font-family: system-ui,-apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+
+    /* Phone frame */
+    .device { position:relative; width:var(--device-w); height:var(--device-h); background:#fff; border:var(--chrome) solid #cfcfcf; border-radius:28px; box-shadow:0 12px 28px rgba(0,0,0,.18),0 2px 4px rgba(0,0,0,.08); overflow:hidden; }
+
+    /* Status bar */
+    .statusbar { position:absolute; inset:0 0 auto 0; height:24px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 10px; font-size:13px; color:#000; user-select:none; z-index:5; }
+    .status-left{display:flex;align-items:center;gap:6px}
+    .status-center{text-align:center;font-weight:700}
+    .status-right{display:flex;justify-content:flex-end;align-items:center;gap:8px}
+    .battery{width:24px;height:12px;border:2px solid #111;border-radius:3px;position:relative}
+    .battery::after{content:"";position:absolute;right:-4px;top:3px;width:3px;height:6px;background:#111;border-radius:1px}
+    .battery .level{width:70%;height:100%;background:#111;border-radius:1px}
+
+    /* Background cover */
+    .screen { position:absolute; inset:24px 0 0 0; display:grid; grid-template-rows:auto 1fr; overflow:hidden; background:#000; }
+    .screen::before{
+      content:"";
+      position:absolute; inset:0;
+      background:url('./1_Banner_7565e3bf83.jpg') center/cover no-repeat; /* make sure this file exists */
+      filter:brightness(.75);
+      transform:scale(1.02)
+    }
+    .screen::after{content:"";position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,.2))}
+
+    /* Topbar */
+    .topbar{position:relative;z-index:3;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:10px 12px;height:56px;color:#fff}
+    .brand{display:flex;align-items:center;gap:8px; cursor:pointer;}
+    .brand img{width:100px;height:50px;display:block}
+    .icon-btn{width:36px;height:36px;border:0;border-radius:10px;background:rgba(255,255,255,.14);display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(6px)}
+    .icon-btn svg{display:block}
+    .hamburger span{width:18px;height:2px;background:#fff;display:block;margin:2px 0;border-radius:2px}
+
+    /* Booking sheet */
+    .sheet { position:relative; z-index:2; display:grid; place-items:center; padding:12px; }
+    .panel { width:min(420px, calc(100% - 24px)); margin-top:150px; background:var(--glass); border:1px solid rgba(255,255,255,.22); border-radius:18px; padding:18px 16px; color:#fff; text-align:left; backdrop-filter:blur(1px); box-shadow:0 8px 24px rgba(0,0,0,.35); }
+    .panel h2 { margin:0 0 10px; font-size:20px; }
+
+    .provider-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.3);font-weight:700;margin-bottom:12px}
+    .provider-badge svg{width:20px;height:20px}
+
+    .field{display:grid;gap:6px;margin:10px 0}
+    .field label{font-size:12px;opacity:.9}
+    .input, select, .btn, .tab{appearance:none;-webkit-appearance:none}
+    .input{width:100%;padding:12px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);color:#fff}
+    .row{display:grid;grid-template-columns:1fr auto;gap:8px}
+    .ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:14px;border:0;font-weight:800;cursor:pointer}
+    .btn.primary{background:#000;color:#fff;width:100%;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+    .btn.light{background:#fff;color:#000}
+    .btn.warn{background:#b00020;color:#fff}
+
+    .toggle{display:inline-grid;grid-auto-flow:column;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);padding:4px;border-radius:12px}
+    .toggle button{padding:8px 12px;border-radius:10px;font-weight:700;background:transparent;color:#fff;border:0;cursor:pointer}
+    .toggle button.active{background:#fff;color:#000}
+
+    /* Tabs for payment */
+    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+    .tab{padding:10px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.24);color:#fff;text-align:center;cursor:pointer;font-weight:700}
+    .tab.active{background:#fff;color:#000}
+
+    .pay-body{margin-top:10px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+    .muted{opacity:.85;font-size:12px}
+    .success{display:grid;gap:10px;text-align:center}
+    .driver-card{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:12px;border-radius:14px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.25)}
+    .avatar{width:48px;height:48px;border-radius:50%;background:#fff;color:#000;display:grid;place-items:center;font-weight:800}
+    .map{height:220px;border-radius:14px;background:#111;display:grid;place-items:center;border:1px solid rgba(255,255,255,.25);overflow:hidden}
+    .map iframe{width:100%;height:100%;border:0}
+
+    /* Modal toast */
+    .toast{position:absolute; left:50%; top:84px; transform:translateX(-50%); z-index:6;
+      background:#fff; color:#000; padding:10px 14px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.35);
+      font-weight:700; opacity:0; pointer-events:none; transition:opacity .25s ease;}
+    .toast.show{opacity:1}
+
+    /* Helpers */
+    .hide{display:none !important}
+    .actions{display:grid;grid-auto-flow:column;gap:8px}
+  </style>
+</head>
+<body>
+  <div class="device">
+    <div class="statusbar">
+      <div class="status-left">
+        <span>Batelco</span>
+        <svg class="wifi" width="18" height="12" viewBox="0 0 24 14" aria-hidden="true">
+          <path d="M2 5.5a16 16 0 0 1 20 0" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+          <path d="M6 9.5a10 10 0 0 1 12 0" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+          <path d="M10 12.5a4 4 0 0 1 4 0" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="status-center" id="bh-clock"></div>
+      <div class="status-right"><div class="battery"><div class="level"></div></div></div>
+    </div>
+
+    <div class="screen">
+      <!-- toast -->
+      <div id="toast" class="toast">Thank you! Your ride is booked.</div>
+
+      <header class="topbar" role="banner">
+        <!-- Back -->
+        <button id="backHome" class="icon-btn" aria-label="Back to home">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+
+        <!-- Logo (clickable home) -->
+        <div id="logoHome" class="brand" aria-label="Nusuk logo">
+          <img src="./logo.svg" alt="Nusuk" />
+        </div>
+
+        <!-- Menu placeholder -->
+        <button class="icon-btn hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+      </header>
+
+      <main class="sheet">
+        <!-- STEP 1: Locations -->
+        <section id="step1" class="panel">
+          <div class="provider-badge" id="providerBadge">
+            <svg id="providerIcon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M4 4h16v16H4z" fill="#fff"/><path d="M8 8v8m0-4h8"/></svg>
+            <span id="providerName">Uber</span>
+          </div>
+          <h2>Choose locations</h2>
+          <div class="field">
+            <label for="pickup">Pickup</label>
+            <div class="row">
+              <input id="pickup" class="input" placeholder="Enter pickup or use current" />
+              <button id="btnCurrent" class="btn ghost" type="button">Use current</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="drop">Destination</label>
+            <input id="drop" class="input" placeholder="Where to?" />
+          </div>
+          <div class="actions" style="margin-top:12px">
+            <button id="cancel1" class="btn light" type="button">Cancel & Home</button>
+            <button id="toStep2" class="btn primary" type="button">Continue</button>
+          </div>
+          <p class="muted">You can adjust on the next step.</p>
+        </section>
+
+        <!-- STEP 2: Time -->
+        <section id="step2" class="panel hide">
+          <div class="provider-badge"><span id="summaryLocs">Pickup → Drop</span></div>
+          <h2>When do you want to go?</h2>
+          <div class="toggle" role="tablist" aria-label="Ride time">
+            <button id="optNow" class="active" role="tab" aria-selected="true">Now</button>
+            <button id="optLater" role="tab" aria-selected="false">Schedule</button>
+          </div>
+          <div id="scheduleBox" class="hide" style="margin-top:12px">
+            <div class="grid2">
+              <div class="field">
+                <label for="date">Date</label>
+                <input id="date" class="input" type="date" />
+              </div>
+              <div class="field">
+                <label for="time">Time</label>
+                <input id="time" class="input" type="time" />
+              </div>
+            </div>
+          </div>
+          <div class="actions" style="margin-top:12px">
+            <button id="cancel2" class="btn light" type="button">Cancel & Home</button>
+            <button id="back1" class="btn ghost" type="button">Back</button>
+            <button id="toStep3" class="btn primary" type="button">Continue</button>
+          </div>
+        </section>
+
+        <!-- STEP 3: Payment -->
+        <section id="step3" class="panel hide">
+          <div class="provider-badge"><span id="summaryTime">Now</span></div>
+          <h2>Payment</h2>
+          <div class="tabs" role="tablist" aria-label="Payment method">
+            <button class="tab active" data-pay="cash" role="tab" aria-selected="true">Cash</button>
+            <button class="tab" data-pay="benefit" role="tab" aria-selected="false">BenefitPay</button>
+            <button class="tab" data-pay="card" role="tab" aria-selected="false">Card</button>
+          </div>
+
+          <div id="payCash" class="pay-body">
+            <p class="muted">Pay the driver in cash at pickup.</p>
+          </div>
+
+          <div id="payBenefit" class="pay-body hide">
+            <div class="grid2">
+              <div class="field">
+                <label for="bpAmount">Amount (BHD)</label>
+                <input id="bpAmount" class="input" inputmode="decimal" value="3.000" />
+              </div>
+              <div class="field">
+                <label for="bpRef">Reference</label>
+                <input id="bpRef" class="input" value="RB-123456" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Scan to Pay (BenefitPay demo)</label>
+              <div class="row" style="grid-template-columns:auto 1fr; align-items:center;">
+                <img id="benefitQR" alt="BenefitPay QR" style="width:140px;height:140px;border-radius:10px;background:#fff;object-fit:contain;border:1px solid rgba(255,255,255,.35)" />
+                <div style="padding-left:10px">
+                  <div class="muted">Merchant: <strong>NUSUK DEMO</strong></div>
+                  <div class="muted">Currency: <strong>BHD</strong></div>
+                  <div class="muted">Method: <strong>QR</strong></div>
+                  <button id="regenQR" class="btn light" type="button" style="margin-top:8px">Refresh QR</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="payCard" class="pay-body hide">
+            <div class="field"><label for="ccname">Name on card</label><input id="ccname" class="input" placeholder="Full name" /></div>
+            <div class="field"><label for="ccnum">Card number</label><input id="ccnum" class="input" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" /></div>
+            <div class="grid2">
+              <div class="field"><label for="ccexp">Expiry</label><input id="ccexp" class="input" placeholder="MM/YY" inputmode="numeric" /></div>
+              <div class="field"><label for="cvv">CVV</label><input id="cvv" class="input" placeholder="123" inputmode="numeric" /></div>
+            </div>
+          </div>
+
+          <div class="actions" style="margin-top:12px">
+            <button id="cancel3" class="btn light" type="button">Cancel & Home</button>
+            <button id="back2" class="btn ghost" type="button">Back</button>
+            <button id="confirmPay" class="btn primary" type="button">Pay & Book Ride</button>
+          </div>
+        </section>
+
+        <!-- STEP 4: Success / Driver assigned -->
+        <section id="step4" class="panel hide">
+          <div class="success">
+            <h2>Thank you! Your ride is booked.</h2>
+            <p class="muted">Your driver is on the way. ETA <strong><span id="eta">7</span> min</strong>.</p>
+            <div class="driver-card">
+              <div class="avatar" id="driverAvatar">AK</div>
+              <div>
+                <div><strong id="driverName">Ahmed Khan</strong> • <span id="carModel">Toyota Camry</span></div>
+                <div class="muted">Plate <span id="plate">70213</span> • Provider <span id="provLabel">Uber</span></div>
+              </div>
+            </div>
+            <div id="routeMap" class="map" aria-label="Route preview"><span class="muted">Loading map…</span></div>
+            <div class="actions">
+              <button class="btn light" id="trackBtn" type="button">Open in Google Maps</button>
+              <button class="btn primary" id="closeBtn" type="button">Close</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ---- Bahrain clock ----
+    (function startBahrainClock(){
+      const el=document.getElementById('bh-clock'); if(!el) return; const tz='Asia/Bahrain';
+      function tick(){ const now=new Date(); const time=new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:tz}).format(now); el.textContent=time; el.title=new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:tz}).format(now);} tick(); setInterval(tick,30000); })();
+
+    // ---- Home navigation ----
+    const goHome = () => window.location.href = './index.html';
+
+    document.getElementById('backHome').addEventListener('click', goHome);
+    document.getElementById('logoHome').addEventListener('click', goHome);
+
+    // ---- Read provider from URL (?provider=Uber|Careem) ----
+    const params=new URLSearchParams(location.search);
+    const provider=(params.get('provider')||'Uber').trim();
+    const providerName=document.getElementById('providerName');
+    const providerIcon=document.getElementById('providerIcon');
+    const provLabel=document.getElementById('provLabel');
+    providerName.textContent=provider; provLabel.textContent=provider;
+    if (provider.toLowerCase()==='careem') {
+      providerIcon.innerHTML='<path d="M4 12a8 8 0 1 0 16 0"/><circle cx="16.5" cy="8.5" r="1.5" fill="#fff" stroke="none"/>';
+      providerIcon.setAttribute('stroke','#fff');
+    } else {
+      providerIcon.innerHTML='<path d="M4 4h16v16H4z" fill="#fff"/><path d="M8 8v8m0-4h8"/>';
+      providerIcon.setAttribute('stroke','#000');
+    }
+
+    // ---- Step navigation helpers ----
+    const step1=document.getElementById('step1');
+    const step2=document.getElementById('step2');
+    const step3=document.getElementById('step3');
+    const step4=document.getElementById('step4');
+    function show(el){ [step1,step2,step3,step4].forEach(s=>s.classList.add('hide')); el.classList.remove('hide'); }
+
+    // Cancel buttons (go home)
+    ['cancel1','cancel2','cancel3'].forEach(id=>{
+      const el=document.getElementById(id);
+      el.addEventListener('click', goHome);
+    });
+
+    // Step 1 controls
+    const pickup=document.getElementById('pickup');
+    const drop=document.getElementById('drop');
+    const btnCurrent=document.getElementById('btnCurrent');
+    document.getElementById('toStep2').addEventListener('click',()=>{
+      if(!pickup.value||!drop.value){ alert('Please enter pickup and destination.'); return; }
+      document.getElementById('summaryLocs').textContent=`${pickup.value} → ${drop.value}`;
+      show(step2);
+    });
+
+    // Geolocation (HTTPS required in real use)
+    btnCurrent.addEventListener('click',()=>{
+      if(!navigator.geolocation){ alert('Geolocation not supported in this browser.'); return; }
+      btnCurrent.disabled=true; btnCurrent.textContent='Locating…';
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const {latitude, longitude}=pos.coords;
+        pickup.value=`Current location (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`;
+        btnCurrent.textContent='Use current'; btnCurrent.disabled=false;
+      }, err=>{
+        alert('Unable to get location: '+err.message);
+        btnCurrent.textContent='Use current'; btnCurrent.disabled=false;
+      }, {enableHighAccuracy:true, timeout:10000});
+    });
+
+    // Step 2 controls (time)
+    const optNow=document.getElementById('optNow');
+    const optLater=document.getElementById('optLater');
+    const scheduleBox=document.getElementById('scheduleBox');
+    optNow.addEventListener('click',()=>{ optNow.classList.add('active'); optNow.setAttribute('aria-selected','true'); optLater.classList.remove('active'); optLater.setAttribute('aria-selected','false'); scheduleBox.classList.add('hide'); });
+    optLater.addEventListener('click',()=>{ optLater.classList.add('active'); optLater.setAttribute('aria-selected','true'); optNow.classList.remove('active'); optNow.setAttribute('aria-selected','false'); scheduleBox.classList.remove('hide'); });
+    document.getElementById('back1').addEventListener('click',()=>show(step1));
+    document.getElementById('toStep3').addEventListener('click',()=>{
+      let text='Now';
+      if(optLater.classList.contains('active')){
+        const d=document.getElementById('date').value; const t=document.getElementById('time').value;
+        if(!d||!t){ alert('Select date and time.'); return; }
+        text=`Scheduled: ${d} ${t}`;
+      }
+      document.getElementById('summaryTime').textContent=text;
+      // Pre-generate BenefitPay QR when entering Step 3
+      generateBenefitQR();
+      show(step3);
+    });
+
+    // Step 3 payment tabs
+    const tabs=[...document.querySelectorAll('.tab')];
+    const bodies={cash:document.getElementById('payCash'), benefit:document.getElementById('payBenefit'), card:document.getElementById('payCard')};
+    tabs.forEach(tab=>tab.addEventListener('click',()=>{
+      tabs.forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false')});
+      tab.classList.add('active'); tab.setAttribute('aria-selected','true');
+      Object.values(bodies).forEach(b=>b.classList.add('hide'));
+      bodies[tab.dataset.pay].classList.remove('hide');
+      if (tab.dataset.pay==='benefit') generateBenefitQR();
+    }));
+
+    // BenefitPay QR (demo via Google Charts)
+    const benefitQR = document.getElementById('benefitQR');
+    function generateBenefitQR(){
+      const amount = (document.getElementById('bpAmount').value || '3.000').trim();
+      const ref    = (document.getElementById('bpRef').value || 'RB-123456').trim();
+      // Demo payload string (custom; replace with your real merchant payload format)
+      const payload = `benefitpay://pay?merchant=NUSUK-DEMO&currency=BHD&amount=${amount}&reference=${encodeURIComponent(ref)}`;
+      const url = 'https://chart.googleapis.com/chart?cht=qr&chs=220x220&chld=M|0&chl=' + encodeURIComponent(payload);
+      benefitQR.src = url;
+      benefitQR.alt = `BenefitPay QR for ${amount} BHD (Ref ${ref})`;
+    }
+    document.getElementById('regenQR').addEventListener('click', generateBenefitQR);
+
+    document.getElementById('back2').addEventListener('click',()=>show(step2));
+
+    // Confirm & Book
+    document.getElementById('confirmPay').addEventListener('click',()=>{
+      // Simple front-end validation for card option
+      const activeTab=document.querySelector('.tab.active').dataset.pay;
+      if(activeTab==='card'){
+        const num=document.getElementById('ccnum').value.replace(/\s+/g,'');
+        const exp=document.getElementById('ccexp').value.trim();
+        const cvv=document.getElementById('cvv').value.trim();
+        if(num.length<12||!exp||cvv.length<3){ alert('Please enter valid card details.'); return; }
+      }
+      // Success flow
+      show(step4);
+      toast('Thank you! Your ride is booked.');
+
+      // Fill driver details (mock)
+      const names=['Ahmed Khan','Sara Ali','Mohammed Isa','Fatima Yusuf'];
+      const cars=['Toyota Camry','Hyundai Sonata','Kia K5','Honda Accord'];
+      const plates=['70213','51241','99321','11802'];
+      const i=Math.floor(Math.random()*names.length);
+      document.getElementById('driverName').textContent=names[i];
+      document.getElementById('carModel').textContent=cars[i];
+      document.getElementById('plate').textContent=plates[i];
+      document.getElementById('eta').textContent= 5 + Math.floor(Math.random()*6);
+      document.getElementById('driverAvatar').textContent=names[i].split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase();
+
+      // Build Google Maps route embed (no API key)
+      const { saddr, daddr } = buildAddresses();
+      const embedSrc = `https://www.google.com/maps?output=embed&saddr=${saddr}&daddr=${daddr}`;
+      const routeMap = document.getElementById('routeMap');
+      routeMap.innerHTML = `<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${embedSrc}"></iframe>`;
+
+      // Track button opens full Google Maps in a new tab
+      document.getElementById('trackBtn').onclick = ()=> {
+        window.open(`https://www.google.com/maps/dir/?api=1&origin=${saddr}&destination=${daddr}`, '_blank');
+      };
+    });
+
+    document.getElementById('closeBtn').addEventListener('click', goHome);
+
+    // Helpers: toast & addresses
+    function toast(msg){
+      const t=document.getElementById('toast');
+      t.textContent=msg;
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 3000);
+    }
+
+    function buildAddresses(){
+      // Try to parse "Current location (lat, lng)"
+      const p = pickup.value.trim();
+      let saddr;
+      const m = p.match(/Current location \\(([-0-9.]+),\\s*([-0-9.]+)\\)/i);
+      if (m) saddr = `${m[1]},${m[2]}`;
+      else saddr = encodeURIComponent(p);
+
+      const daddr = encodeURIComponent(drop.value.trim());
+      return { saddr, daddr };
+    }
+  </script>
+</body>
+</html>
